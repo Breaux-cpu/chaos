@@ -40,9 +40,21 @@ sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/tcpdump
 
 **The dashboard has no authentication by default.** Anyone who can reach
 `http://<board-ip>:7000` can trigger scans. Set `CHAOS_PENTEST_TOKEN` in
-Brick Configuration to require a shared token on every pentest action, and
-if jessy is reachable beyond your LAN (e.g. its public IPv6), firewall port
-7000 to trusted interfaces the same way you did for VNC.
+Brick Configuration to require a shared token on every pentest action. Port
+7000 is firewalled to `tailscale0` at the network level on the reference
+deployment (jessy) — check your own host's firewall if you're running this
+elsewhere.
+
+## Flipper Zero bridge
+
+`python/flipper_bridge.py` pushes a one-line status update to a connected
+Flipper Zero running the companion
+[`chaos_relay`](https://github.com/Breaux-cpu/flipper-apps) app, over the
+same USB cable — no BLE, no pairing. Fires automatically on every QR/barcode
+scan and every pentest job completion/failure. Best-effort: a missing or
+busy Flipper never blocks chaos itself. Requires `pyserial`
+(`python/requirements.txt`) and `/dev/flipper` (or another stable path to
+the device) to be reachable from wherever chaos actually runs.
 
 ## Run it
 
@@ -59,4 +71,13 @@ for MCU-side serial output. QR/barcode scanning requires a USB webcam.
 - Object/image classification for device ID beyond QR/barcode
 - `dbstorage_sqlstore` for persistent scan/job history
 - Telegram bot for remote alerts
-- BLE bridge to a Flipper Zero–class companion device
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) — including a straightforward path
+to adding a new pentest tool wrapper. Please read
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) too.
+
+## License
+
+[MIT](LICENSE)
