@@ -9,10 +9,10 @@ icon: 🌀
 
 # A short description of what the application does.
 description: >
-  AI-augmented recon companion for jessy — scans QR/barcodes with the camera,
-  runs an authorized-use pentest toolkit (nmap/nikto/gobuster/sqlmap/hydra/
-  tcpdump), shows live status on the LED matrix, and posts everything to a
-  web dashboard.
+  AI-augmented recon companion for the Arduino UNO Q — scans QR/barcodes
+  with the camera, runs an authorized-use pentest toolkit (nmap/nikto/
+  gobuster/sqlmap/hydra/tcpdump), shows live status on the LED matrix, and
+  posts everything to a web dashboard.
 
 # A list of network ports that the application exposes.
 # Example: [80, 443]

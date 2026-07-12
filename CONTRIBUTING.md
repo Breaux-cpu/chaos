@@ -16,9 +16,11 @@ welcome.
 
 ## What this project is
 
-An Arduino App for the Arduino UNO Q / Ventuno Q ("jessy" is the board's
-name in the local docs, not a generic term). If you don't have this exact
-board, you can still read/review code and improve `pentest.py` and
+An Arduino App for the **Arduino UNO Q / Ventuno Q**. (Some comments/logs
+still say "jessy" — that's just the reference deployment's hostname, not a
+generic term; if you're running this on your own board, ignore it.) If you
+don't have this exact board, you can still read/review code and improve
+`pentest.py` and
 `flipper_bridge.py` — both are standalone Python modules with no dependency
 on the Arduino app framework, so you can run and test them directly:
 

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-"""CHAOS — recon companion for jessy.
+"""CHAOS — recon companion for the Arduino UNO Q.
 
 Scans QR codes / barcodes with the camera, runs an authorized-use pentest
 toolkit (nmap/nikto/gobuster/sqlmap/hydra/tcpdump) on demand, mirrors status
@@ -157,7 +157,7 @@ if not PENTEST_TOKEN:
     Logger.warning(
         "CHAOS_PENTEST_TOKEN is not set — the pentest panel on :7000 is unauthenticated. "
         "Set it in Brick Configuration, and if this board is reachable beyond your LAN "
-        "(e.g. jessy's public IPv6), firewall port 7000 to trusted interfaces only."
+        "(e.g. over a public IPv6 address), firewall port 7000 to trusted interfaces only."
     )
 
 detector = CameraCodeDetection()  # also initializes the camera

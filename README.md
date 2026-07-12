@@ -11,9 +11,10 @@ Nothing else pairs a Flipper-class handheld with a real vision-and-LLM
 companion that can look at a device, run a full pentest pass against it, and
 push the result back to a screen in your hand — because nothing else has
 needed to build that bridge. `chaos` builds it: this repo is the AI/vision
-side (jessy), [`flipper-apps`](https://github.com/Breaux-cpu/flipper-apps)
-is the on-device display side, and the two talk to each other over plain
-USB serial today, verified working, not a roadmap slide.
+side, running on an **Arduino UNO Q**,
+[`flipper-apps`](https://github.com/Breaux-cpu/flipper-apps) is the
+on-device display side, and the two talk to each other over plain USB
+serial today, verified working, not a roadmap slide.
 
 It's a QR/barcode scanner using the `camera_code_detection` Brick, an
 authorized-use pentest toolkit wrapping the six security tools already
@@ -57,8 +58,8 @@ sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/tcpdump
 `http://<board-ip>:7000` can trigger scans. Set `CHAOS_PENTEST_TOKEN` in
 Brick Configuration to require a shared token on every pentest action. Port
 7000 is firewalled to `tailscale0` at the network level on the reference
-deployment (jessy) — check your own host's firewall if you're running this
-elsewhere.
+Arduino UNO Q deployment — check your own host's firewall if you're running
+this elsewhere.
 
 ## Flipper Zero bridge
 
@@ -111,8 +112,8 @@ real build log. If you want to back it:
   peripherals, eventually a second board for Track A). If that link 404s,
   GitHub Sponsors isn't enabled on the account yet — starring/sharing still
   helps just as much in the meantime.
-- **Share it** with anyone who'd find the jessy↔Flipper bridge idea
-  interesting — that's the piece nobody else has built yet.
+- **Share it** with anyone who'd find the Arduino UNO Q ↔ Flipper bridge
+  idea interesting — that's the piece nobody else has built yet.
 
 ## License
 
