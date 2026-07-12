@@ -1,16 +1,31 @@
 # 🌀 chaos
 
-AI-augmented recon companion for jessy — vision ID, pentest toolkit, remote control.
+**The brain half of a two-device pentest platform.** Point a camera at
+something, run a full recon/exploitation pass, and hand the result to a
+Flipper Zero over the same USB cable — all from a $44 Linux+MCU board that
+also happens to already have nmap, nikto, gobuster, sqlmap, and hydra sitting
+on it.
 
-This is the Phase 1 slice of the two-track build plan: a QR/barcode scanner
-using the `camera_code_detection` Brick, an authorized-use pentest toolkit
-wrapping the tools already installed on this board, a live status mirror on
-the MCU's LED matrix (scanning / match / alert), and a web dashboard on port
-7000 for both.
+Most Flipper Zero projects stop at "custom firmware with a nicer menu."
+Nothing else pairs a Flipper-class handheld with a real vision-and-LLM
+companion that can look at a device, run a full pentest pass against it, and
+push the result back to a screen in your hand — because nothing else has
+needed to build that bridge. `chaos` builds it: this repo is the AI/vision
+side (jessy), [`flipper-apps`](https://github.com/Breaux-cpu/flipper-apps)
+is the on-device display side, and the two talk to each other over plain
+USB serial today, verified working, not a roadmap slide.
+
+It's a QR/barcode scanner using the `camera_code_detection` Brick, an
+authorized-use pentest toolkit wrapping the six security tools already
+installed on this board, a live status mirror on the MCU's LED matrix
+(scanning / match / alert), a web dashboard on port 7000, and a bridge that
+pushes every scan and every job result straight to a connected Flipper's
+screen.
 
 **Authorized use only.** This app can trigger real network scans, credential
 brute-forcing, and traffic capture against real hosts. Only point it at
-systems you own or are explicitly authorized to test.
+systems you own or are explicitly authorized to test. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for what that means for contributions.
 
 ## Pentest toolkit
 
@@ -77,6 +92,27 @@ for MCU-side serial output. QR/barcode scanning requires a USB webcam.
 See [CONTRIBUTING.md](CONTRIBUTING.md) — including a straightforward path
 to adding a new pentest tool wrapper. Please read
 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) too.
+
+## Support this project
+
+This is a solo build, in the open, as it happens — the commit history is the
+real build log. If you want to back it:
+
+- **⭐ Star the repo.** Sounds small; it's the #1 thing that gets a project
+  in front of the next contributor, since it's most of what GitHub's
+  discovery surfaces run on.
+- **Try it and open issues.** A precise bug report or a "here's where I got
+  stuck" from a real run is worth more than a compliment.
+- **Send a PR.** [CONTRIBUTING.md](CONTRIBUTING.md) has a scoped first task
+  (add a new pentest tool wrapper) that doesn't require reading the whole
+  codebase first.
+- **[💜 Sponsor on GitHub](https://github.com/sponsors/Breaux-cpu)** — funds
+  the actual hardware this project depends on (a Flipper Zero, USB
+  peripherals, eventually a second board for Track A). If that link 404s,
+  GitHub Sponsors isn't enabled on the account yet — starring/sharing still
+  helps just as much in the meantime.
+- **Share it** with anyone who'd find the jessy↔Flipper bridge idea
+  interesting — that's the piece nobody else has built yet.
 
 ## License
 
