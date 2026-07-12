@@ -1,0 +1,24 @@
+# app.yaml: The main configuration file for your Arduino App.
+# This file describes the application's metadata and properties.
+
+# The user-visible name of the application.
+name: chaos
+
+# The icon for the application, can be an emoji or a short string.
+icon: 🌀
+
+# A short description of what the application does.
+description: >
+  AI-augmented recon companion for jessy — scans QR/barcodes with the camera,
+  runs an authorized-use pentest toolkit (nmap/nikto/gobuster/sqlmap/hydra/
+  tcpdump), shows live status on the LED matrix, and posts everything to a
+  web dashboard.
+
+# A list of network ports that the application exposes.
+# Example: [80, 443]
+ports: []
+
+# A list of bricks used by this application.
+bricks:
+  - arduino:web_ui
+  - arduino:camera_code_detection

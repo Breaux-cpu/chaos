@@ -1,0 +1,111 @@
+<!--
+SPDX-FileCopyrightText: Copyright (C) Arduino s.r.l. and/or its affiliated companies
+
+SPDX-License-Identifier: MPL-2.0
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHAOS</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1><span class="spin">🌀</span> CHAOS</h1>
+        <span id="conn-indicator" class="mono">connecting…</span>
+      </header>
+
+      <div class="status-panel">
+        <span id="status-dot" class="status-dot"></span>
+        <div>
+          <div id="status-label">Waiting for board…</div>
+          <div id="status-detail" class="mono">—</div>
+        </div>
+      </div>
+
+      <h2>Recent scans</h2>
+      <ul id="scan-list"></ul>
+      <div id="empty-state">No codes scanned yet. Point the camera at a QR code or barcode.</div>
+
+      <h2 class="section-gap">Pentest toolkit <span class="mono authz-note">— authorized targets only</span></h2>
+      <div class="pentest-panel">
+        <div class="field-row">
+          <label for="pt-target">Target</label>
+          <input id="pt-target" class="mono" type="text" placeholder="192.168.1.0/24 or http://host/page?id=1" />
+        </div>
+
+        <div class="tool-grid">
+          <div class="tool-card">
+            <div class="tool-name">nmap</div>
+            <select id="nmap-profile" class="mono">
+              <option value="discovery">discovery (host sweep)</option>
+              <option value="quick" selected>quick (top 100 ports)</option>
+              <option value="version">version (+ service ID)</option>
+              <option value="full">full (all 65535 ports)</option>
+            </select>
+            <button data-tool="nmap">Run nmap</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">nikto</div>
+            <p class="tool-hint">Target must be a URL</p>
+            <button data-tool="nikto">Run nikto</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">gobuster</div>
+            <p class="tool-hint">Target must be a URL</p>
+            <button data-tool="gobuster">Run gobuster</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">sqlmap</div>
+            <p class="tool-hint">Target must be a URL with a parameter</p>
+            <button data-tool="sqlmap">Run sqlmap</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">hydra</div>
+            <select id="hydra-service" class="mono">
+              <option value="ssh" selected>ssh</option>
+              <option value="ftp">ftp</option>
+              <option value="http-get">http-get</option>
+            </select>
+            <button data-tool="hydra">Run hydra</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">tcpdump</div>
+            <select id="tcpdump-iface" class="mono">
+              <option value="wlan0" selected>wlan0</option>
+              <option value="tailscale0">tailscale0</option>
+            </select>
+            <select id="tcpdump-filter" class="mono">
+              <option value="all" selected>all</option>
+              <option value="tcp">tcp</option>
+              <option value="udp">udp</option>
+              <option value="arp">arp</option>
+              <option value="http">http</option>
+              <option value="dns">dns</option>
+            </select>
+            <button data-tool="tcpdump">Capture 15s</button>
+          </div>
+        </div>
+
+        <div id="pentest-error" class="pentest-error" style="display: none"></div>
+
+        <h2 class="section-gap">Jobs</h2>
+        <ul id="job-list"></ul>
+        <div id="job-empty-state">No jobs run yet.</div>
+      </div>
+    </div>
+
+    <script src="libs/socket.io.min.js"></script>
+    <script src="libs/arduino.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

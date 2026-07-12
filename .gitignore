@@ -1,0 +1,6 @@
+# ignore app cache folder
+.cache/
+__pycache__/
+
+# pentest job output — packet captures may contain sensitive traffic
+captures/

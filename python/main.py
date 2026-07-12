@@ -1,0 +1,170 @@
+# SPDX-FileCopyrightText: Copyright (C) Arduino s.r.l. and/or its affiliated companies
+#
+# SPDX-License-Identifier: MPL-2.0
+
+"""CHAOS — recon companion for jessy.
+
+Scans QR codes / barcodes with the camera, runs an authorized-use pentest
+toolkit (nmap/nikto/gobuster/sqlmap/hydra/tcpdump) on demand, mirrors status
+on the LED matrix (scanning / match / alert), and streams everything to the
+web dashboard on :7000.
+"""
+
+import os
+import threading
+import time
+
+from arduino.app_utils import App, Bridge, Logger
+from arduino.app_bricks.web_ui import WebUI
+from arduino.app_bricks.camera_code_detection import CameraCodeDetection, Detection
+
+import pentest
+import flipper_bridge
+
+MATCH_DISPLAY_SECONDS = 1.5
+ALERT_DISPLAY_SECONDS = 3.0
+MAX_RECENT_SCANS = 25
+
+# If set (Brick Configuration env var), pentest actions must include this
+# token in the WebSocket payload. Left unset, the dashboard's pentest panel
+# is reachable by anyone who can reach port 7000 — see README for why that
+# matters and how to lock it down.
+PENTEST_TOKEN = os.environ.get("CHAOS_PENTEST_TOKEN")
+
+_state_lock = threading.Lock()
+_match_until = 0.0
+_alert_until = 0.0
+recent_scans = []  # most recent first
+
+
+def get_led_state():
+    """Polled by the sketch every loop() to pick which frame to draw."""
+    with _state_lock:
+        now = time.time()
+        if now < _alert_until:
+            return "alert"
+        if now < _match_until:
+            return "match"
+        return "scanning"
+
+
+def _flash_match(duration=MATCH_DISPLAY_SECONDS):
+    global _match_until
+    with _state_lock:
+        _match_until = time.time() + duration
+
+
+def _flash_alert(duration=ALERT_DISPLAY_SECONDS):
+    global _alert_until
+    with _state_lock:
+        _alert_until = time.time() + duration
+
+
+def _relay_to_flipper(text: str):
+    """Best-effort, non-blocking: push a status line to a connected Flipper
+    (CHAOS Relay app). A missing/busy Flipper is not an error for chaos."""
+    threading.Thread(target=flipper_bridge.push_status, args=(text,), daemon=True).start()
+
+
+# --- QR / barcode scanning -----------------------------------------------
+
+
+def on_code_detected(frame, detection: Detection):
+    entry = {
+        "type": detection.type,
+        "content": detection.content,
+        "timestamp": time.time(),
+    }
+    recent_scans.insert(0, entry)
+    del recent_scans[MAX_RECENT_SCANS:]
+    Logger.info(f"Detected {detection.type}: {detection.content}")
+
+    _flash_match()
+    _relay_to_flipper(f"{detection.type}: {detection.content}")
+    ui.send_message("scan", entry)
+
+
+def on_camera_error(error: Exception):
+    Logger.error(f"Camera error: {error}")
+    _flash_alert()
+    ui.send_message("error", {"message": str(error)})
+
+
+def list_scans():
+    return {"scans": recent_scans}
+
+
+# --- Pentest toolkit -------------------------------------------------------
+
+
+def _on_job_update(job: pentest.Job):
+    ui.send_message("job_update", pentest.to_dict(job))
+    if job.status == "done":
+        _flash_match()
+        _relay_to_flipper(f"{job.tool} done: {job.target}")
+    elif job.status == "error":
+        _flash_alert()
+        _relay_to_flipper(f"{job.tool} FAILED: {job.target}")
+
+
+def on_pentest_run(sid, data):
+    if PENTEST_TOKEN and data.get("token") != PENTEST_TOKEN:
+        return {"error": "unauthorized"}
+
+    tool = data.get("tool")
+    try:
+        if tool == "nmap":
+            job = pentest.nmap_scan(data.get("target", ""), data.get("profile", "quick"), _on_job_update)
+        elif tool == "nikto":
+            job = pentest.nikto_scan(data.get("target", ""), _on_job_update)
+        elif tool == "gobuster":
+            job = pentest.gobuster_scan(data.get("target", ""), _on_job_update)
+        elif tool == "sqlmap":
+            job = pentest.sqlmap_scan(data.get("target", ""), _on_job_update)
+        elif tool == "hydra":
+            job = pentest.hydra_attack(
+                data.get("target", ""), data.get("service", "ssh"), _on_job_update, port=data.get("port")
+            )
+        elif tool == "tcpdump":
+            job = pentest.tcpdump_capture(
+                data.get("interface", "wlan0"),
+                int(data.get("duration", 15)),
+                data.get("filter", "all"),
+                _on_job_update,
+            )
+        else:
+            return {"error": f"Unknown tool: {tool}"}
+    except (ValueError, TypeError) as e:
+        return {"error": str(e)}
+
+    Logger.info(f"pentest job started: {job.tool} -> {job.target} (id={job.id})")
+    return {"job_id": job.id, "status": job.status}
+
+
+def list_jobs():
+    return {"jobs": pentest.list_jobs()}
+
+
+# --- wiring ------------------------------------------------------------
+
+ui = WebUI()
+ui.expose_api("GET", "/api/scans", list_scans)
+ui.expose_api("GET", "/api/jobs", list_jobs)
+ui.on_connect(lambda sid: ui.send_message("scan_history", {"scans": recent_scans}))
+ui.on_message("pentest_run", on_pentest_run)
+
+if not PENTEST_TOKEN:
+    Logger.warning(
+        "CHAOS_PENTEST_TOKEN is not set — the pentest panel on :7000 is unauthenticated. "
+        "Set it in Brick Configuration, and if this board is reachable beyond your LAN "
+        "(e.g. jessy's public IPv6), firewall port 7000 to trusted interfaces only."
+    )
+
+detector = CameraCodeDetection()  # also initializes the camera
+detector.on_detect(on_code_detected)
+detector.on_error(on_camera_error)
+
+# The sketch calls this every loop() to decide which LED matrix frame to draw.
+Bridge.provide("get_led_state", get_led_state)
+
+App.run()

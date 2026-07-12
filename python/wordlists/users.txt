@@ -1,0 +1,15 @@
+admin
+administrator
+root
+user
+test
+guest
+pi
+ubuntu
+oracle
+postgres
+ftp
+www-data
+support
+backup
+info
