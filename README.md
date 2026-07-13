@@ -16,17 +16,48 @@ side, running on an **Arduino UNO Q**,
 on-device display side, and the two talk to each other over plain USB
 serial today, verified working, not a roadmap slide.
 
-It's a QR/barcode scanner using the `camera_code_detection` Brick, an
-authorized-use pentest toolkit wrapping the six security tools already
-installed on this board, a live status mirror on the MCU's LED matrix
-(scanning / match / alert), a web dashboard on port 7000, and a bridge that
-pushes every scan and every job result straight to a connected Flipper's
+It's a QR/barcode scanner (`camera_code_detection` Brick), an authorized-use
+pentest toolkit wrapping eleven security tools already on the board, a live
+status mirror on the MCU's LED matrix (scanning / match / alert), a web
+dashboard on port 7000, a Telegram bot that pushes every scan and job result
+to your phone (and runs object detection on photos you send it), and a
+USB-serial bridge that mirrors the same status onto a connected Flipper's
 screen.
 
 **Authorized use only.** This app can trigger real network scans, credential
 brute-forcing, and traffic capture against real hosts. Only point it at
 systems you own or are explicitly authorized to test. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for what that means for contributions.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+    CAM["USB webcam"]
+    BROWSER["Browser dashboard"]
+    TG["Telegram bot<br/>(your phone)"]
+    FLIP["Flipper Zero<br/>chaos_relay app"]
+    NET(["authorized<br/>target hosts"])
+
+    subgraph UNOQ["Arduino UNO Q"]
+        MPU["Linux MPU — chaos app"]
+        MCU["MCU — LED matrix"]
+        DB[("SQLite<br/>scans · jobs · subscribers")]
+        MPU <-->|Router Bridge| MCU
+        MPU --- DB
+    end
+
+    CAM -->|QR / barcode| MPU
+    MPU -->|nmap, masscan, nikto, tcpdump, ...| NET
+    MPU <-->|USB serial| FLIP
+    MPU <-->|port 7000| BROWSER
+    MPU <-->|alerts + photo object-detection| TG
+```
+
+Two devices, one cable: the Arduino UNO Q does the vision, storage, and
+network work, and mirrors status to the Flipper over USB serial. The web
+dashboard and the Telegram bot are two independent ways to drive it and read
+results — the bot needs nothing but your phone, wherever you are.
 
 ## Pentest toolkit
 
