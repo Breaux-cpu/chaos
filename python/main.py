@@ -132,6 +132,20 @@ def on_pentest_run(sid, data):
                 data.get("filter", "all"),
                 _on_job_update,
             )
+        elif tool == "wifi_scan":
+            job = pentest.wifi_scan(
+                data.get("interface", "wlan0"),
+                int(data.get("duration", 30)),
+                _on_job_update,
+            )
+        elif tool == "wifi_deauth":
+            job = pentest.wifi_deauth(
+                data.get("interface", "wlan0mon"),
+                data.get("bssid", ""),
+                data.get("client_mac", ""),
+                int(data.get("count", 5)),
+                _on_job_update,
+            )
         else:
             return {"error": f"Unknown tool: {tool}"}
     except (ValueError, TypeError) as e:

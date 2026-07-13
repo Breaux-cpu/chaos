@@ -31,7 +31,7 @@ systems you own or are explicitly authorized to test. See
 ## Pentest toolkit
 
 `python/pentest.py` is a standalone module (no dependency on the Arduino app
-framework) wrapping six tools that ship on this board:
+framework) wrapping eight tools that ship on this board:
 
 | Tool | Use | Notes |
 |---|---|---|
@@ -41,18 +41,32 @@ framework) wrapping six tools that ship on this board:
 | `sqlmap` | SQL injection testing | `--batch --level=1 --risk=1` — low-noise defaults |
 | `hydra` | Credential brute-forcing | ssh/ftp/http-get only, `python/wordlists/{users,passwords}.txt`, stops at first hit |
 | `tcpdump` | Packet capture | Writes to `captures/*.pcap`, capped at 120s |
+| `wifi_scan` | Passive WiFi recon (aircrack-ng suite) | Enables monitor mode, records nearby APs/clients, restores managed mode. **Interrupts WiFi on that interface for the scan's duration** — if you're connected to this board over the same WiFi link, expect to get dropped until it finishes. |
+| `wifi_deauth` | Deauth an AP's client(s) | Needs an interface already in monitor mode (run `wifi_scan` or `airmon-ng start` by hand first). BSSID and client MAC are validated as strict `AA:BB:CC:DD:EE:FF` — blank client MAC deauths everyone on that AP. |
 
 Every target is validated against a strict allow-pattern before it's placed
 in a subprocess argv list — commands never go through a shell, so there's no
 injection surface. There is **no allowlist of permitted hosts**; scope
 enforcement is on you, the operator.
 
-**`tcpdump` needs a one-time capability grant** — the app runs as an
-unprivileged user, so captures fail with a permission error until you run:
+**`tcpdump` and the WiFi tools need a one-time capability grant** — the app
+runs as an unprivileged user, so captures/monitor-mode fail with a
+permission error until you run:
 
 ```bash
 sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/tcpdump
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/airmon-ng
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/airodump-ng
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/aireplay-ng
 ```
+
+The aircrack-ng grants are **unverified** — `airmon-ng` shells out to `iw`/
+`ip` internally to reconfigure the interface, and whether its own
+capabilities propagate to those child processes depends on the kernel/driver
+combination. If a `wifi_scan` job errors out with a permission problem even
+after the `setcap` calls above, that's the likely cause — file an issue with
+the exact error, it's a known open question, not a mystery to debug from
+scratch.
 
 **The dashboard has no authentication by default.** Anyone who can reach
 `http://<board-ip>:7000` can trigger scans. Set `CHAOS_PENTEST_TOKEN` in

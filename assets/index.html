@@ -94,6 +94,25 @@ SPDX-License-Identifier: MPL-2.0
             </select>
             <button data-tool="tcpdump">Capture 15s</button>
           </div>
+
+          <div class="tool-card">
+            <div class="tool-name">wifi scan</div>
+            <p class="tool-hint">Interrupts WiFi on the chosen interface for 30s</p>
+            <select id="wifiscan-iface" class="mono">
+              <option value="wlan0" selected>wlan0</option>
+            </select>
+            <button data-tool="wifi_scan">Scan 30s</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">wifi deauth</div>
+            <p class="tool-hint">Target field = BSSID. Interface must already be in monitor mode.</p>
+            <input id="wifideauth-client" class="mono" type="text" placeholder="client MAC (blank = all clients)" />
+            <select id="wifideauth-iface" class="mono">
+              <option value="wlan0mon" selected>wlan0mon</option>
+            </select>
+            <button data-tool="wifi_deauth">Deauth x5</button>
+          </div>
         </div>
 
         <div id="pentest-error" class="pentest-error" style="display: none"></div>

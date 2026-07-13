@@ -108,6 +108,14 @@ function runTool(tool) {
     payload.interface = document.querySelector('#tcpdump-iface').value;
     payload.filter = document.querySelector('#tcpdump-filter').value;
     payload.duration = 15;
+  } else if (tool === 'wifi_scan') {
+    payload.interface = document.querySelector('#wifiscan-iface').value;
+    payload.duration = 30;
+  } else if (tool === 'wifi_deauth') {
+    payload.bssid = target;
+    payload.interface = document.querySelector('#wifideauth-iface').value;
+    payload.client_mac = document.querySelector('#wifideauth-client').value.trim();
+    payload.count = 5;
   }
 
   pentestError.style.display = 'none';

@@ -1,0 +1,56 @@
+name: "Sanity checks"
+# python/ and flipper_bridge.py have no dependency on the Arduino app
+# framework or real hardware, so they can be syntax/import-checked here
+# even though the app itself can't run in CI (needs the board).
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Compile-check all Python files
+        run: |
+          python3 -m py_compile python/*.py
+      - name: Install pyserial and import-check pentest.py + flipper_bridge.py
+        run: |
+          pip install pyserial
+          cd python
+          python3 -c "import pentest, flipper_bridge"
+      - name: Validation unit checks (no live hardware/network)
+        run: |
+          cd python
+          python3 - <<'EOF'
+          import pentest
+
+          assert pentest.valid_target("192.168.1.0/24")
+          assert not pentest.valid_target("; rm -rf /")
+          assert pentest.valid_url("http://127.0.0.1:8080/page?id=1")
+          assert not pentest.valid_url("-h http://evil")
+          assert pentest.valid_mac("AA:BB:CC:DD:EE:FF")
+          assert not pentest.valid_mac("not-a-mac")
+          print("OK: pentest.py validation checks passed")
+          EOF
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Syntax-check dashboard JS
+        run: node --check assets/app.js
+      - name: Parse-check dashboard HTML
+        run: |
+          python3 -c "
+          import html.parser
+          html.parser.HTMLParser().feed(open('assets/index.html').read())
+          print('OK')
+          "
