@@ -15,12 +15,15 @@ import json
 import os
 import threading
 import time
+from io import BytesIO
 
 from arduino.app_utils import App, Bridge, Logger
 from arduino.app_bricks.web_ui import WebUI
 from arduino.app_bricks.camera_code_detection import CameraCodeDetection, Detection
 from arduino.app_bricks.dbstorage_sqlstore import SQLStore
 from arduino.app_bricks.telegram_bot import TelegramBot, Sender, Message
+from arduino.app_bricks.object_detection import ObjectDetection
+from PIL import Image
 
 import pentest
 import flipper_bridge
@@ -355,7 +358,8 @@ def tg_start(sender: Sender, message: Message):
             f"🌀 CHAOS alerts on, {sender.first_name}. "
             "You'll get every QR/barcode scan and pentest job result here.\n\n"
             "/status — current state\n/scans — recent scans\n"
-            "/jobs — recent pentest jobs\n/stop — turn alerts off"
+            "/jobs — recent pentest jobs\n/stop — turn alerts off\n\n"
+            "📷 Send me a photo and I'll run object detection on it."
         )
     else:
         sender.reply("🌀 You're already subscribed. /help for commands.")
@@ -373,7 +377,8 @@ def tg_help(sender: Sender, message: Message):
         "/stop — unsubscribe\n"
         "/status — current LED state + counts\n"
         "/scans — last few scans\n"
-        "/jobs — last few pentest jobs"
+        "/jobs — last few pentest jobs\n\n"
+        "📷 Send a photo to run object detection on it."
     )
 
 
@@ -404,6 +409,43 @@ def tg_jobs(sender: Sender, message: Message):
     sender.reply("Recent jobs:\n" + "\n".join(lines))
 
 
+def tg_photo(sender: Sender, message: Message, photo: bytes, filename: str, size: int):
+    """Run object detection on a photo the user sends and reply with the
+    annotated image plus a labelled summary — device ID without needing the
+    board's own camera. Mirrors the object_detection Brick examples."""
+    sender.reply("🔍 Detecting objects…")
+    try:
+        image = Image.open(BytesIO(photo))
+        results = object_detection.detect(image, confidence=0.4)
+    except Exception as e:
+        Logger.error(f"Object detection failed on Telegram photo: {e}")
+        sender.reply("❌ Couldn't process that image.")
+        return
+
+    detections = (results or {}).get("detection", [])
+    if not detections:
+        sender.reply("No objects detected.")
+        return
+
+    top = sorted(detections, key=lambda d: d.get("confidence", 0), reverse=True)[:6]
+    summary = ", ".join(f"{d.get('class_name', '?')} ({d.get('confidence', 0):.2f})" for d in top)
+    caption = f"✅ Found {len(detections)}: {summary}"
+
+    annotated = None
+    try:
+        annotated = object_detection.draw_bounding_boxes(image, results)
+    except Exception as e:
+        Logger.error(f"draw_bounding_boxes failed: {e}")
+
+    if annotated is not None:
+        out = BytesIO()
+        annotated.save(out, format="PNG")
+        if sender.reply_photo(out.getvalue(), caption):
+            return
+    # No annotated image (or the photo send failed): fall back to text.
+    sender.reply(caption)
+
+
 # --- wiring ------------------------------------------------------------
 
 store = SQLStore("chaos.db")
@@ -423,6 +465,8 @@ if not PENTEST_TOKEN:
         "(e.g. over a public IPv6 address), firewall port 7000 to trusted interfaces only."
     )
 
+object_detection = ObjectDetection()  # runs on photos sent to the Telegram bot
+
 if TELEGRAM_TOKEN:
     bot = TelegramBot(whitelist_user_ids=TELEGRAM_USER_IDS or None)
     bot.add_command("start", tg_start, "Subscribe to CHAOS alerts")
@@ -431,6 +475,7 @@ if TELEGRAM_TOKEN:
     bot.add_command("scans", tg_scans, "Recent scans")
     bot.add_command("jobs", tg_jobs, "Recent pentest jobs")
     bot.add_command("help", tg_help, "Show commands")
+    bot.on_photo(tg_photo)  # send a photo -> object detection reply
     if not TELEGRAM_USER_IDS:
         Logger.warning(
             "TELEGRAM_BOT_TOKEN is set but CHAOS_TELEGRAM_USER_IDS is not — anyone who "

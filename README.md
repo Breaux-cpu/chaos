@@ -117,6 +117,12 @@ job result automatically. Commands: `/start`, `/stop`, `/status`, `/scans`,
 `/jobs`, `/help`. Subscribers are stored in the same SQLite DB, so they
 survive a restart.
 
+**Send the bot a photo** and it runs object detection on it (`object_detection`
+Brick, COCO classes — laptop, phone, keyboard, TV, and the rest), replying
+with the annotated image and a labelled, confidence-ranked summary. It's a
+device-ID path that doesn't need the board's own camera: point your phone at
+the thing, send the picture, get back what's in it.
+
 **Lock down who can subscribe.** Anyone who finds an unrestricted bot can
 `/start` it and read your scan/job data. Set `CHAOS_TELEGRAM_USER_IDS` (a
 comma-separated list of Telegram user IDs — get yours from
@@ -145,7 +151,8 @@ for MCU-side serial output. QR/barcode scanning requires a USB webcam.
 
 ## What's next
 
-- Object/image classification for device ID beyond QR/barcode
+- On-board (camera-fed) object detection for live device ID, complementing
+  the Telegram photo path that already does it on demand
 - Marauder integration on the Flipper's WiFi Devboard (ESP32) as an
   alternative to `wifi_scan`/`wifi_deauth` that doesn't interrupt this
   board's own WiFi connection

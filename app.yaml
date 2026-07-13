@@ -24,3 +24,4 @@ bricks:
   - arduino:camera_code_detection
   - arduino:dbstorage_sqlstore
   - arduino:telegram_bot
+  - arduino:object_detection
