@@ -316,6 +316,32 @@ def history_jobs():
     return {"jobs": store.read("jobs", order_by="finished_at DESC", limit=100)}
 
 
+def _seed_dashboard():
+    """Push persisted scan/job history to the dashboard on connect, so the
+    lists aren't empty until the next live event (including after a restart).
+    The DB reads happen here — driven by a browser connecting — not at import,
+    so storage is fully up by the time this runs. Falls back to the in-memory
+    session list if a read fails."""
+    try:
+        scans = store.read("scans", order_by="timestamp DESC", limit=100)
+    except Exception as e:
+        Logger.error(f"Failed to seed scans from history: {e}")
+        scans = recent_scans
+    ui.send_message("scan_history", {"scans": scans})
+
+    try:
+        rows = store.read("jobs", order_by="finished_at DESC", limit=100)
+    except Exception as e:
+        Logger.error(f"Failed to seed jobs from history: {e}")
+        return
+    # Persisted rows use job_id; the dashboard's job renderer keys on id.
+    jobs = [
+        {"id": r["job_id"], "tool": r["tool"], "target": r["target"], "status": r["status"], "output": r["output"]}
+        for r in rows
+    ]
+    ui.send_message("job_history", {"jobs": jobs})
+
+
 # --- Telegram commands ----------------------------------------------------
 #
 # Alerts are outbound, but Telegram won't let a bot message someone who hasn't
@@ -387,7 +413,7 @@ ui.expose_api("GET", "/api/scans", list_scans)
 ui.expose_api("GET", "/api/jobs", list_jobs)
 ui.expose_api("GET", "/api/history/scans", history_scans)
 ui.expose_api("GET", "/api/history/jobs", history_jobs)
-ui.on_connect(lambda sid: ui.send_message("scan_history", {"scans": recent_scans}))
+ui.on_connect(lambda sid: _seed_dashboard())
 ui.on_message("pentest_run", on_pentest_run)
 
 if not PENTEST_TOKEN:

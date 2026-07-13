@@ -47,10 +47,6 @@ python3 -c "import pentest; print(pentest.valid_target('192.168.1.0/24'))"
   step, no framework.
 - **Add IPv6 support** to `pentest.valid_target`/`valid_url` — currently
   IPv4/hostname only, noted as a known gap.
-- **Seed the dashboard's live scan/job lists from persisted history on
-  startup** instead of requiring a manual "Load persisted history" click —
-  history is already there (`SQLStore`/`main.py`), this is a UX gap, not a
-  missing backend.
 - **Verify (or fix) the WiFi tools' capability grants.** `wifi_scan`/
   `wifi_deauth` in `pentest.py` need `setcap` on three `aircrack-ng`
   binaries, and whether `airmon-ng`'s capabilities actually reach the

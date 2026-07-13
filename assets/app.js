@@ -35,6 +35,7 @@ const ui = new WebUI();
 ui.on_connect(onConnected);
 ui.on_disconnect(onDisconnected);
 ui.on_message('scan_history', ({ scans }) => renderScans(scans));
+ui.on_message('job_history', ({ jobs }) => seedJobs(jobs));
 ui.on_message('scan', onScan);
 ui.on_message('error', onError);
 ui.on_message('job_update', onJobUpdate);
@@ -84,7 +85,9 @@ function setStatus(state, label, detail) {
 
 function renderScans(scans) {
   scanList.innerHTML = '';
-  (scans || []).forEach(prependScan);
+  // scans arrive newest-first; prependScan pushes each to the top, so feed
+  // them oldest-first to leave the newest on top — matching the live path.
+  (scans || []).slice().reverse().forEach(prependScan);
   emptyState.style.display = scans && scans.length ? 'none' : 'block';
 }
 
@@ -171,6 +174,14 @@ function onJobUpdate(job) {
   `;
 }
 
+// Seed the job list from history without clearing it: onJobUpdate upserts by
+// id, so a job still running (not persisted until it finishes) survives the
+// reseed the server sends on every connect. History arrives newest-first;
+// reverse so prepend leaves the newest on top, matching the live path.
+function seedJobs(jobs) {
+  (jobs || []).slice().reverse().forEach(onJobUpdate);
+}
+
 // --- Persisted history (survives an app restart) ---
 
 async function loadPersistedHistory() {
@@ -188,14 +199,14 @@ async function loadPersistedHistory() {
     renderScans(scans);
     jobList.innerHTML = '';
     jobsById.clear();
-    jobs.forEach((row) =>
-      onJobUpdate({
+    seedJobs(
+      jobs.map((row) => ({
         id: row.job_id,
         tool: row.tool,
         target: row.target,
         status: row.status,
         output: row.output,
-      })
+      }))
     );
     btn.textContent = `Loaded ${scans.length} scans, ${jobs.length} jobs`;
   } catch (err) {

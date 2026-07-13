@@ -126,11 +126,12 @@ logs a warning at startup if the token is set but the whitelist isn't.
 ## Persistent history
 
 Every scan and every completed/errored pentest job is written to a local
-SQLite database (`dbstorage_sqlstore` Brick) as well as kept in memory.
-The dashboard's scan/job lists only reflect the current session — click
-**Load persisted history** to pull everything from disk, including from
-before the last restart. `/api/history/scans` and `/api/history/jobs` are
-also plain REST endpoints if you want it outside the dashboard.
+SQLite database (`dbstorage_sqlstore` Brick) as well as kept in memory. The
+dashboard seeds its scan/job lists from that saved history the moment you
+open it — including entries from before the last restart — so you don't start
+at an empty screen. **Reload from history** re-syncs the lists from disk on
+demand, and `/api/history/scans` / `/api/history/jobs` expose the same data
+as plain REST endpoints outside the dashboard.
 
 ## Run it
 
@@ -145,8 +146,6 @@ for MCU-side serial output. QR/barcode scanning requires a USB webcam.
 ## What's next
 
 - Object/image classification for device ID beyond QR/barcode
-- Seed the dashboard's live view from persisted history on startup, instead
-  of requiring a manual "Load persisted history" click
 - Marauder integration on the Flipper's WiFi Devboard (ESP32) as an
   alternative to `wifi_scan`/`wifi_deauth` that doesn't interrupt this
   board's own WiFi connection
