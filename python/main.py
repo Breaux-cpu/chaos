@@ -10,6 +10,7 @@ on the LED matrix (scanning / match / alert), and streams everything to the
 web dashboard on :7000.
 """
 
+import json
 import os
 import threading
 import time
@@ -17,6 +18,7 @@ import time
 from arduino.app_utils import App, Bridge, Logger
 from arduino.app_bricks.web_ui import WebUI
 from arduino.app_bricks.camera_code_detection import CameraCodeDetection, Detection
+from arduino.app_bricks.dbstorage_sqlstore import SQLStore
 
 import pentest
 import flipper_bridge
@@ -79,6 +81,11 @@ def on_code_detected(frame, detection: Detection):
     del recent_scans[MAX_RECENT_SCANS:]
     Logger.info(f"Detected {detection.type}: {detection.content}")
 
+    try:
+        store.store("scans", entry)
+    except Exception as e:
+        Logger.error(f"Failed to persist scan: {e}")
+
     _flash_match()
     _relay_to_flipper(f"{detection.type}: {detection.content}")
     ui.send_message("scan", entry)
@@ -94,7 +101,33 @@ def list_scans():
     return {"scans": recent_scans}
 
 
+def history_scans():
+    """Persistent scan history, unlike /api/scans which is just this
+    session's in-memory list — survives an app restart."""
+    return {"scans": store.read("scans", order_by="timestamp DESC", limit=100)}
+
+
 # --- Pentest toolkit -------------------------------------------------------
+
+
+def _persist_job(job: pentest.Job):
+    try:
+        store.store(
+            "jobs",
+            {
+                "job_id": job.id,
+                "tool": job.tool,
+                "target": job.target,
+                "status": job.status,
+                "returncode": job.returncode if job.returncode is not None else -1,
+                "started_at": job.started_at,
+                "finished_at": job.finished_at or 0.0,
+                "output": job.output,
+                "extra": json.dumps(job.extra),
+            },
+        )
+    except Exception as e:
+        Logger.error(f"Failed to persist job {job.id}: {e}")
 
 
 def _on_job_update(job: pentest.Job):
@@ -102,9 +135,11 @@ def _on_job_update(job: pentest.Job):
     if job.status == "done":
         _flash_match()
         _relay_to_flipper(f"{job.tool} done: {job.target}")
+        _persist_job(job)
     elif job.status == "error":
         _flash_alert()
         _relay_to_flipper(f"{job.tool} FAILED: {job.target}")
+        _persist_job(job)
 
 
 def on_pentest_run(sid, data):
@@ -159,11 +194,21 @@ def list_jobs():
     return {"jobs": pentest.list_jobs()}
 
 
+def history_jobs():
+    """Persistent job history (completed/errored only) — survives an app
+    restart, unlike /api/jobs which only knows about this session's jobs."""
+    return {"jobs": store.read("jobs", order_by="finished_at DESC", limit=100)}
+
+
 # --- wiring ------------------------------------------------------------
+
+store = SQLStore("chaos.db")
 
 ui = WebUI()
 ui.expose_api("GET", "/api/scans", list_scans)
 ui.expose_api("GET", "/api/jobs", list_jobs)
+ui.expose_api("GET", "/api/history/scans", history_scans)
+ui.expose_api("GET", "/api/history/jobs", history_jobs)
 ui.on_connect(lambda sid: ui.send_message("scan_history", {"scans": recent_scans}))
 ui.on_message("pentest_run", on_pentest_run)
 

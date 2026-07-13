@@ -31,6 +31,8 @@ document.querySelectorAll('[data-tool]').forEach((btn) => {
   btn.addEventListener('click', () => runTool(btn.dataset.tool));
 });
 
+document.querySelector('#load-history').addEventListener('click', loadPersistedHistory);
+
 function onConnected() {
   connIndicator.textContent = 'connected';
   connIndicator.className = 'mono connected';
@@ -145,4 +147,38 @@ function onJobUpdate(job) {
     </div>
     <pre class="job-output mono">${escapeHtml(job.output || '')}</pre>
   `;
+}
+
+// --- Persisted history (survives an app restart) ---
+
+async function loadPersistedHistory() {
+  const btn = document.querySelector('#load-history');
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+  try {
+    const [scansRes, jobsRes] = await Promise.all([
+      fetch('/api/history/scans'),
+      fetch('/api/history/jobs'),
+    ]);
+    const { scans } = await scansRes.json();
+    const { jobs } = await jobsRes.json();
+
+    renderScans(scans);
+    jobList.innerHTML = '';
+    jobsById.clear();
+    jobs.forEach((row) =>
+      onJobUpdate({
+        id: row.job_id,
+        tool: row.tool,
+        target: row.target,
+        status: row.status,
+        output: row.output,
+      })
+    );
+    btn.textContent = `Loaded ${scans.length} scans, ${jobs.length} jobs`;
+  } catch (err) {
+    btn.textContent = 'Failed to load history';
+  } finally {
+    btn.disabled = false;
+  }
 }

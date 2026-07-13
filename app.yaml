@@ -22,3 +22,4 @@ ports: []
 bricks:
   - arduino:web_ui
   - arduino:camera_code_detection
+  - arduino:dbstorage_sqlstore

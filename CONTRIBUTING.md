@@ -47,17 +47,25 @@ python3 -c "import pentest; print(pentest.valid_target('192.168.1.0/24'))"
   step, no framework.
 - **Add IPv6 support** to `pentest.valid_target`/`valid_url` — currently
   IPv4/hostname only, noted as a known gap.
-- **Persist scan/job history** with the `dbstorage_sqlstore` Brick instead
-  of the current in-memory lists.
+- **Seed the dashboard's live scan/job lists from persisted history on
+  startup** instead of requiring a manual "Load persisted history" click —
+  history is already there (`SQLStore`/`main.py`), this is a UX gap, not a
+  missing backend.
+- **Verify (or fix) the WiFi tools' capability grants.** `wifi_scan`/
+  `wifi_deauth` in `pentest.py` need `setcap` on three `aircrack-ng`
+  binaries, and whether `airmon-ng`'s capabilities actually reach the
+  `iw`/`ip` processes it shells out to is genuinely unverified — see the
+  README's WiFi section.
 
 ## Code style
 
 - No comments explaining *what* code does — name things clearly instead.
   Comments are for *why*, when it's non-obvious (see existing code for the
   tone).
-- Every subprocess call goes through `pentest.start_job` — no ad hoc
-  `subprocess.run` calls elsewhere, so job tracking/limits/output-capping
-  stay consistent.
+- Every subprocess call goes through `pentest.start_job` (single command) or
+  `pentest.start_multistep_job` (a sequence, e.g. enable monitor mode / scan
+  / restore) — no ad hoc `subprocess.run` calls elsewhere, so job tracking/
+  limits/output-capping stay consistent.
 - Validate at the boundary (`valid_target`/`valid_url`), trust it everywhere
   after that.
 

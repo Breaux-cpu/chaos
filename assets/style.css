@@ -346,3 +346,26 @@ button[data-tool]:hover {
   word-break: break-all;
   margin: 0;
 }
+
+.history-row {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.history-row button {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  padding: 7px 10px;
+  font-size: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.history-row button:hover {
+  border-color: var(--copper);
+  color: var(--copper);
+}

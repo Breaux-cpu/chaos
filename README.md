@@ -86,6 +86,15 @@ busy Flipper never blocks chaos itself. Requires `pyserial`
 (`python/requirements.txt`) and `/dev/flipper` (or another stable path to
 the device) to be reachable from wherever chaos actually runs.
 
+## Persistent history
+
+Every scan and every completed/errored pentest job is written to a local
+SQLite database (`dbstorage_sqlstore` Brick) as well as kept in memory.
+The dashboard's scan/job lists only reflect the current session — click
+**Load persisted history** to pull everything from disk, including from
+before the last restart. `/api/history/scans` and `/api/history/jobs` are
+also plain REST endpoints if you want it outside the dashboard.
+
 ## Run it
 
 ```bash
@@ -99,8 +108,12 @@ for MCU-side serial output. QR/barcode scanning requires a USB webcam.
 ## What's next
 
 - Object/image classification for device ID beyond QR/barcode
-- `dbstorage_sqlstore` for persistent scan/job history
 - Telegram bot for remote alerts
+- Seed the dashboard's live view from persisted history on startup, instead
+  of requiring a manual "Load persisted history" click
+- Marauder integration on the Flipper's WiFi Devboard (ESP32) as an
+  alternative to `wifi_scan`/`wifi_deauth` that doesn't interrupt this
+  board's own WiFi connection
 
 ## Contributing
 
