@@ -14,9 +14,11 @@ SPDX-License-Identifier: MPL-2.0
   </head>
   <body>
     <div class="wrap">
-      <header>
-        <h1><span class="spin">🌀</span> CHAOS</h1>
-        <span id="conn-indicator" class="mono">connecting…</span>
+      <header class="masthead">
+        <div class="masthead-inner">
+          <h1><span class="spin">🌀</span>CHAOS<span class="tag">recon console</span></h1>
+          <span id="conn-indicator" class="mono">connecting…</span>
+        </div>
       </header>
 
       <div class="status-panel">
@@ -145,7 +147,7 @@ SPDX-License-Identifier: MPL-2.0
             <button data-tool="wifi_scan">Scan 30s</button>
           </div>
 
-          <div class="tool-card">
+          <div class="tool-card danger">
             <div class="tool-name">wifi deauth</div>
             <p class="tool-hint">Target field = BSSID. Interface must already be in monitor mode.</p>
             <input id="wifideauth-client" class="mono" type="text" placeholder="client MAC (blank = all clients)" />
