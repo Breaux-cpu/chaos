@@ -18,6 +18,19 @@ const jobList = document.querySelector('#job-list');
 const jobEmptyState = document.querySelector('#job-empty-state');
 const jobsById = new Map();
 
+// CHAOS_PENTEST_TOKEN, if the operator set one (Brick Configuration), must be
+// echoed back on every pentest_run message or main.py's on_pentest_run()
+// rejects it with {"error": "unauthorized"}. Kept in localStorage (this
+// browser only, same-origin) so it doesn't need retyping every page load --
+// still only as safe as the browser/device it's typed into, same as any
+// other locally-remembered credential.
+const TOKEN_STORAGE_KEY = 'chaos_pentest_token';
+const tokenInput = document.querySelector('#pt-token');
+tokenInput.value = localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+tokenInput.addEventListener('input', () => {
+  localStorage.setItem(TOKEN_STORAGE_KEY, tokenInput.value);
+});
+
 const ui = new WebUI();
 ui.on_connect(onConnected);
 ui.on_disconnect(onDisconnected);
@@ -100,15 +113,21 @@ function escapeHtml(str) {
 
 function runTool(tool) {
   const target = document.querySelector('#pt-target').value.trim();
-  const payload = { tool, target };
+  const payload = { tool, target, token: tokenInput.value };
 
   if (tool === 'nmap') {
     payload.profile = document.querySelector('#nmap-profile').value;
+  } else if (tool === 'masscan') {
+    payload.ports = document.querySelector('#masscan-ports').value.trim();
   } else if (tool === 'hydra') {
     payload.service = document.querySelector('#hydra-service').value;
   } else if (tool === 'tcpdump') {
     payload.interface = document.querySelector('#tcpdump-iface').value;
     payload.filter = document.querySelector('#tcpdump-filter').value;
+    payload.duration = 15;
+  } else if (tool === 'tshark') {
+    payload.interface = document.querySelector('#tshark-iface').value;
+    payload.filter = document.querySelector('#tshark-filter').value;
     payload.duration = 15;
   } else if (tool === 'wifi_scan') {
     payload.interface = document.querySelector('#wifiscan-iface').value;
@@ -126,7 +145,10 @@ function runTool(tool) {
 
 function onPentestRunResponse(response) {
   if (response && response.error) {
-    pentestError.textContent = response.error;
+    pentestError.textContent =
+      response.error === 'unauthorized'
+        ? 'Unauthorized — enter the correct auth token above and try again.'
+        : response.error;
     pentestError.style.display = 'block';
   }
 }

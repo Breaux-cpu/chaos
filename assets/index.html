@@ -37,6 +37,16 @@ SPDX-License-Identifier: MPL-2.0
           <label for="pt-target">Target</label>
           <input id="pt-target" class="mono" type="text" placeholder="192.168.1.0/24 or http://host/page?id=1" />
         </div>
+        <div class="field-row">
+          <label for="pt-token">Auth token</label>
+          <input
+            id="pt-token"
+            class="mono"
+            type="password"
+            placeholder="only needed if CHAOS_PENTEST_TOKEN is set"
+            autocomplete="off"
+          />
+        </div>
 
         <div class="tool-grid">
           <div class="tool-card">
@@ -48,6 +58,19 @@ SPDX-License-Identifier: MPL-2.0
               <option value="full">full (all 65535 ports)</option>
             </select>
             <button data-tool="nmap">Run nmap</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">masscan</div>
+            <p class="tool-hint">Fast SYN scan for large ranges — trades nmap's service ID for raw speed</p>
+            <input id="masscan-ports" class="mono" type="text" placeholder="ports, e.g. 1-1000" value="1-1000" />
+            <button data-tool="masscan">Run masscan</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">whois</div>
+            <p class="tool-hint">Informational only — queries a public registry, doesn't touch the target</p>
+            <button data-tool="whois">Run whois</button>
           </div>
 
           <div class="tool-card">
@@ -93,6 +116,24 @@ SPDX-License-Identifier: MPL-2.0
               <option value="dns">dns</option>
             </select>
             <button data-tool="tcpdump">Capture 15s</button>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-name">tshark</div>
+            <p class="tool-hint">Like tcpdump, but decodes packets to readable lines in the job output instead of a .pcap file</p>
+            <select id="tshark-iface" class="mono">
+              <option value="wlan0" selected>wlan0</option>
+              <option value="tailscale0">tailscale0</option>
+            </select>
+            <select id="tshark-filter" class="mono">
+              <option value="all" selected>all</option>
+              <option value="tcp">tcp</option>
+              <option value="udp">udp</option>
+              <option value="arp">arp</option>
+              <option value="http">http</option>
+              <option value="dns">dns</option>
+            </select>
+            <button data-tool="tshark">Capture 15s</button>
           </div>
 
           <div class="tool-card">

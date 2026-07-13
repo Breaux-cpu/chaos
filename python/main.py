@@ -5,9 +5,9 @@
 """CHAOS — recon companion for the Arduino UNO Q.
 
 Scans QR codes / barcodes with the camera, runs an authorized-use pentest
-toolkit (nmap/nikto/gobuster/sqlmap/hydra/tcpdump) on demand, mirrors status
-on the LED matrix (scanning / match / alert), and streams everything to the
-web dashboard on :7000.
+toolkit (nmap/masscan/whois/nikto/gobuster/sqlmap/hydra/tcpdump/tshark/
+aircrack-ng) on demand, mirrors status on the LED matrix (scanning / match /
+alert), and streams everything to the web dashboard on :7000.
 """
 
 import json
@@ -150,6 +150,10 @@ def on_pentest_run(sid, data):
     try:
         if tool == "nmap":
             job = pentest.nmap_scan(data.get("target", ""), data.get("profile", "quick"), _on_job_update)
+        elif tool == "masscan":
+            job = pentest.masscan_scan(data.get("target", ""), data.get("ports", "1-1000"), _on_job_update)
+        elif tool == "whois":
+            job = pentest.whois_lookup(data.get("target", ""), _on_job_update)
         elif tool == "nikto":
             job = pentest.nikto_scan(data.get("target", ""), _on_job_update)
         elif tool == "gobuster":
@@ -162,6 +166,13 @@ def on_pentest_run(sid, data):
             )
         elif tool == "tcpdump":
             job = pentest.tcpdump_capture(
+                data.get("interface", "wlan0"),
+                int(data.get("duration", 15)),
+                data.get("filter", "all"),
+                _on_job_update,
+            )
+        elif tool == "tshark":
+            job = pentest.tshark_capture(
                 data.get("interface", "wlan0"),
                 int(data.get("duration", 15)),
                 data.get("filter", "all"),

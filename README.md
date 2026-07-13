@@ -31,16 +31,19 @@ systems you own or are explicitly authorized to test. See
 ## Pentest toolkit
 
 `python/pentest.py` is a standalone module (no dependency on the Arduino app
-framework) wrapping eight tools that ship on this board:
+framework) wrapping eleven tools that ship on this board:
 
 | Tool | Use | Notes |
 |---|---|---|
 | `nmap` | Host discovery / port / service scanning | Profiles: discovery, quick, version, full |
+| `masscan` | Fast SYN port scan for large ranges | Trades nmap's service/version ID for raw speed; needs the same capability grant as tcpdump below |
+| `whois` | Domain/IP registration lookup | Informational only — queries a public registry, never touches the target itself |
 | `nikto` | Web server vulnerability scan | Target must be a URL |
 | `gobuster` | Directory/file enumeration | Uses `python/wordlists/common-paths.txt` |
 | `sqlmap` | SQL injection testing | `--batch --level=1 --risk=1` — low-noise defaults |
 | `hydra` | Credential brute-forcing | ssh/ftp/http-get only, `python/wordlists/{users,passwords}.txt`, stops at first hit |
-| `tcpdump` | Packet capture | Writes to `captures/*.pcap`, capped at 120s |
+| `tcpdump` | Packet capture to a .pcap file | Writes to `captures/*.pcap`, capped at 120s |
+| `tshark` | Packet capture with readable output | Same filters/duration cap as tcpdump, but decodes packets to one-line summaries directly in the job output instead of an opaque file |
 | `wifi_scan` | Passive WiFi recon (aircrack-ng suite) | Enables monitor mode, records nearby APs/clients, restores managed mode. **Interrupts WiFi on that interface for the scan's duration** — if you're connected to this board over the same WiFi link, expect to get dropped until it finishes. |
 | `wifi_deauth` | Deauth an AP's client(s) | Needs an interface already in monitor mode (run `wifi_scan` or `airmon-ng start` by hand first). BSSID and client MAC are validated as strict `AA:BB:CC:DD:EE:FF` — blank client MAC deauths everyone on that AP. |
 
@@ -49,16 +52,22 @@ in a subprocess argv list — commands never go through a shell, so there's no
 injection surface. There is **no allowlist of permitted hosts**; scope
 enforcement is on you, the operator.
 
-**`tcpdump` and the WiFi tools need a one-time capability grant** — the app
-runs as an unprivileged user, so captures/monitor-mode fail with a
-permission error until you run:
+**`tcpdump`, `masscan`, and the WiFi tools need a one-time capability
+grant** — the app runs as an unprivileged user, so captures/raw sockets/
+monitor-mode fail with a permission error until you run:
 
 ```bash
 sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/tcpdump
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/masscan
 sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/airmon-ng
 sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/airodump-ng
 sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/aireplay-ng
 ```
+
+`tshark` needs the same grant if it's a separate binary from `tcpdump` on
+your install (it usually is): `sudo setcap cap_net_raw,cap_net_admin=eip
+$(which tshark)`. `whois` needs no special privileges — it's a plain TCP
+client to a public WHOIS server, same as any other outbound connection.
 
 The aircrack-ng grants are **unverified** — `airmon-ng` shells out to `iw`/
 `ip` internally to reconfigure the interface, and whether its own
@@ -69,11 +78,17 @@ the exact error, it's a known open question, not a mystery to debug from
 scratch.
 
 **The dashboard has no authentication by default.** Anyone who can reach
-`http://<board-ip>:7000` can trigger scans. Set `CHAOS_PENTEST_TOKEN` in
-Brick Configuration to require a shared token on every pentest action. Port
-7000 is firewalled to `tailscale0` at the network level on the reference
-Arduino UNO Q deployment — check your own host's firewall if you're running
-this elsewhere.
+`http://<board-ip>:7000` can trigger scans — including `wifi_deauth`, an
+active attack against real clients, not just passive recon. Set
+`CHAOS_PENTEST_TOKEN` in Brick Configuration to require a shared token on
+every pentest action; enter the same value in the "Auth token" field on the
+dashboard (stored in that browser's `localStorage` so it doesn't need
+retyping every visit — only as safe as the device it's typed into). Given
+what this toolkit can do, **set this token** rather than relying on network
+placement alone. Port 7000 is firewalled to `tailscale0` at the network
+level on the reference Arduino UNO Q deployment — check your own host's
+firewall if you're running this elsewhere, but treat that as defense in
+depth, not a substitute for the token.
 
 ## Flipper Zero bridge
 
