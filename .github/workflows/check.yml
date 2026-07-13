@@ -35,6 +35,9 @@ jobs:
           assert not pentest.valid_url("-h http://evil")
           assert pentest.valid_mac("AA:BB:CC:DD:EE:FF")
           assert not pentest.valid_mac("not-a-mac")
+          assert pentest.valid_ports("80,443")
+          assert pentest.valid_ports("1-1000")
+          assert not pentest.valid_ports("80; rm -rf /")
           print("OK: pentest.py validation checks passed")
           EOF
 

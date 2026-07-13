@@ -101,6 +101,28 @@ busy Flipper never blocks chaos itself. Requires `pyserial`
 (`python/requirements.txt`) and `/dev/flipper` (or another stable path to
 the device) to be reachable from wherever chaos actually runs.
 
+## Telegram alerts
+
+Every scan hit and every pentest job result can be pushed straight to your
+phone via a Telegram bot (`telegram_bot` Brick) — the one alert channel that
+works from anywhere, no camera or Flipper in front of you required.
+
+It's **off unless you configure it.** Set `TELEGRAM_BOT_TOKEN` (from
+[@BotFather](https://t.me/botfather)) in Brick Configuration to turn it on;
+with no token, chaos runs exactly as before and the bot never starts.
+
+Telegram won't let a bot message someone who hasn't messaged it first, so
+send the bot `/start` once to subscribe — after that you get every scan and
+job result automatically. Commands: `/start`, `/stop`, `/status`, `/scans`,
+`/jobs`, `/help`. Subscribers are stored in the same SQLite DB, so they
+survive a restart.
+
+**Lock down who can subscribe.** Anyone who finds an unrestricted bot can
+`/start` it and read your scan/job data. Set `CHAOS_TELEGRAM_USER_IDS` (a
+comma-separated list of Telegram user IDs — get yours from
+[@userinfobot](https://t.me/userinfobot)) to whitelist only yourself. The bot
+logs a warning at startup if the token is set but the whitelist isn't.
+
 ## Persistent history
 
 Every scan and every completed/errored pentest job is written to a local
@@ -123,7 +145,6 @@ for MCU-side serial output. QR/barcode scanning requires a USB webcam.
 ## What's next
 
 - Object/image classification for device ID beyond QR/barcode
-- Telegram bot for remote alerts
 - Seed the dashboard's live view from persisted history on startup, instead
   of requiring a manual "Load persisted history" click
 - Marauder integration on the Flipper's WiFi Devboard (ESP32) as an
